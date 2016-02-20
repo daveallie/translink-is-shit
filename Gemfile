@@ -20,6 +20,8 @@ gem 'haml'
 gem 'bootstrap-sass', '~> 3.3.6'
 gem 'stamp'
 
+gem 'rails_12factor', group: :production
+
 group :development, :test do
   gem 'byebug'
 end
