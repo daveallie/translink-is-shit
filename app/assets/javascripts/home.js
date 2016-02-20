@@ -34,15 +34,21 @@ Translink.init = function(rawData) {
     addData: function(key, rawData) {
       Translink.Data.addData(key, Translink.Data.convertFromRaw(key, rawData))
       updateChartData()
+    },
+    resetData: function() {
+      Translink.Data.removeAllRouteData()
+      updateChartData()
     }
   }
 
   $("#search-btn").click(Translink.Handlers.searchBtnClick)
   $("#search").keyup(function(event){
     if(event.keyCode == 13){
-      $("#search-btn").click();
+      $("#search-btn").click()
     }
-  });
+  })
+
+  $("#clear-btn").click(Translink.Handlers.clearBtnClick)
 }
 
 Translink.Helpers = {
@@ -74,6 +80,9 @@ Translink.Data = (function () {
     addData: function (key, newData) {
       data[key] = newData
     },
+    removeAllRouteData: function() {
+      data = {Global: data['Global']}
+    },
     chartData: function() {
       var keys = _(data).keys().filter(function(k) {return k !== 'Global'}).value()
       keys.unshift('Global')
@@ -91,31 +100,30 @@ Translink.Data = (function () {
     },
     getRawRouteData: function (routeId, callback) {
       getNoCacheJSON("/route/" + routeId + ".json", callback)
+    },
+    checkAndAddRoute: function(routeId, callback) {
+      if (_.includes(Translink.routes, routeId)) {
+        Translink.Data.getRawRouteData(routeId, function(data) {
+          Translink.Chart.addData(routeId, data)
+        })
+        if (_.isFunction(callback)) callback(routeId)
+      } else {
+        alert('There is no information for route '+routeId)
+      }
     }
   }
 })()
 
 Translink.Handlers = {
   searchBtnClick: function() {
-    var checkAndAddRoute = function(routeId) {
-      if (_.includes(Translink.routes, routeId)) {
-        Translink.Data.getRawRouteData(routeId, function(data) { Translink.Chart.addData(routeId, data) })
-      } else {
-        alert('There is no information for route '+routeId)
-      }
-    }
-
     var $search = $("#search")
       , routeId = $search.val()
     $search.val("")
 
-    if (Translink.routes) {
-      checkAndAddRoute(routeId)
-    } else {
-      getNoCacheJSON("/routes.json", function (routes) {
-        Translink.routes = routes;
-        checkAndAddRoute(routeId)
-      })
-    }
+    Translink.Data.checkAndAddRoute(routeId)
+  },
+  clearBtnClick: function() {
+    Translink.Chart.resetData()
+    removeUrlParam('route_ids')
   }
 }
