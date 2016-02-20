@@ -1,0 +1,18 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+
+development:
+  <<: *default
+  database: translink_development
+
+test:
+  <<: *default
+  database: translink_test
+
+production:
+  <<: *default
+  database: translink_production
+  username: translink
+  password: <%= ENV['TRANSLINK_DATABASE_PASSWORD'] %>
