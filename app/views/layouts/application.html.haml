@@ -1,7 +1,7 @@
 !!!
 %html
 %head
-  %title Translink
+  %title= "Translink is Shit#{" | #{content_for(:title)}" if content_for?(:title)}"
   = stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true
   = javascript_include_tag 'application', 'data-turbolinks-track' => true
   = csrf_meta_tags
