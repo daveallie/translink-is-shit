@@ -41,6 +41,15 @@ Translink.init = function(rawData) {
     }
   }
 
+  getNoCacheJSON("/routes.json", function (routes) {
+    Translink.routes = routes;
+    var existingRoutes = (getUrlParamValue("route_ids") || "").split(",")
+    if (existingRoutes.length === 1 && existingRoutes[0] === "") {
+      existingRoutes = []
+    }
+    _.each(existingRoutes, Translink.Data.checkAndAddRoute)
+  })
+
   $("#search-btn").click(Translink.Handlers.searchBtnClick)
   $("#search").keyup(function(event){
     if(event.keyCode == 13){
@@ -120,10 +129,26 @@ Translink.Handlers = {
       , routeId = $search.val()
     $search.val("")
 
-    Translink.Data.checkAndAddRoute(routeId)
+    Translink.Data.checkAndAddRoute(routeId, Translink.Callbacks.updateUrlWithRoute)
   },
   clearBtnClick: function() {
     Translink.Chart.resetData()
     removeUrlParam('route_ids')
+  }
+}
+
+Translink.Callbacks = {
+  updateUrlWithRoute: function(routeId) {
+    routeId = encodeURI(routeId)
+    var value = getUrlParamValue('route_ids')
+
+    if (value) {
+      if (!_.includes(value.split(','), routeId)) {
+        value += ',' + routeId
+      }
+    } else {
+      value = routeId
+    }
+    insertUrlParam('route_ids', value)
   }
 }
