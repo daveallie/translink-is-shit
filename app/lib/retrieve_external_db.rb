@@ -20,7 +20,6 @@ class RetrieveExternalDb
     if resp.success?
       new_rows = JSON.parse(Zlib::GzipReader.new(StringIO.new(resp.parsed_response)).read)
       new_models = new_rows.map do |row|
-
         StopDelay.new({
             id: row['id'],
             time: Time.zone.at(row['time']),

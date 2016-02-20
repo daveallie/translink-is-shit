@@ -1,7 +1,6 @@
 class HomeController < ApplicationController
   def index
-    values = RouteDelay.on_week_days.avg_global_delay.map{|t, d| [t.seconds_since_midnight.round, d.round]}
-    @global = (0..144).map{|t| [t*600, nil]}.to_h.merge(values.to_h).to_a
+    @global = normalize_and_pad_data(RouteDelay.on_week_days.avg_global_delay)
   end
 
   # get '/routes' => 'home#all_routes'
@@ -12,8 +11,17 @@ class HomeController < ApplicationController
 
   # get '/route/:route_id' => 'home#get_route'
   def get_route
-    values = RouteDelay.route(params[:route_id]).on_week_days.avg_global_delay.map{|t, d| [t.seconds_since_midnight.round, d.round]}
-    res  = (0..144).map{|t| [t*600, nil]}.to_h.merge(values.to_h).to_a
+    res = if params[:route_id] == 'all'
+      normalize_and_pad_data(RouteDelay.on_week_days.avg_global_delay)
+    else
+      normalize_and_pad_data(RouteDelay.route(params[:route_id]).on_week_days.avg_global_delay)
+    end
     render json: res, status: 200
+  end
+
+  private
+  def normalize_and_pad_data(data)
+    data = data.map{|t, d| [t.in_time_zone('Brisbane').seconds_since_midnight.round, d.round]}
+    (0..144).map{|t| [t*600, nil]}.to_h.merge(data.to_h).to_a
   end
 end

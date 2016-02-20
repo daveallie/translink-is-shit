@@ -12,8 +12,9 @@ module Filterable
 
     def avg_global_delay
       # time_field = %Q((("time" AT TIME ZONE 'UTC') AT TIME ZONE 'Australia/Brisbane')::time)
-      time_selection = %Q((current_date + (("time"::time AT TIME ZONE 'UTC') AT TIME ZONE 'Australia/Brisbane')))
-      order('"time"::time').group('"time"::time').pluck(time_selection, 'AVG("delay")').map{|t, d| [t, d.to_f]}
+      order = %Q(("time"::time AT TIME ZONE 'UTC') AT TIME ZONE 'Australia/Brisbane')
+      time_selection = %Q(current_date + (#{order}))
+      order(order).group('"time"::time').pluck(time_selection, 'AVG("delay")').map{|t, d| [t, d.to_f]}
     end
   end
 end
