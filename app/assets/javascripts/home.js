@@ -18,6 +18,7 @@ Translink.init = function(rawData) {
     chart.x2Axis
       .tickFormat(Translink.Helpers.secondsToHoursMinutes)
       .axisLabel("Time of Day (HH:MM)")
+      .tickValues(_.range(0, 86400, 3600));
     chart.yAxis
       .tickFormat(Translink.Helpers.secondsToMinutesSeconds)
       .axisLabel("Mintes Late (MM:SS)")
