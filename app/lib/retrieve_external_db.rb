@@ -1,6 +1,6 @@
-require 'tempfile'
 require 'httparty'
-require 'sqlite3'
+require 'zlib'
+require 'stringio'
 
 class RetrieveExternalDb
   def initialize(url)
@@ -8,66 +8,51 @@ class RetrieveExternalDb
   end
 
   def import!
-    file = download
-    if file
-      restore(file)
-    else
-      Rails.logger.error('No file was downloaded!')
-    end
+    import_stop_data!
+    import_route_data!
   end
 
   private
-  def download
-    db_file = Tempfile.new('db_dump', Rails.root.join('tmp'))
-    db_file.binmode
-    db_file.write HTTParty.get(@url).parsed_response
-    db_file.close
-    db_file
+  def import_stop_data!
+    max_stop_delays_id = StopDelay.maximum(:id) || -1
+    Rails.logger.debug("Getting stop data rows with id > #{max_stop_delays_id}")
+    resp = HTTParty.get("#{@url}/stop_data/recent/#{max_stop_delays_id}")
+    if resp.success?
+      new_rows = JSON.parse(Zlib::GzipReader.new(StringIO.new(resp.parsed_response)).read)
+      new_models = new_rows.map do |row|
+
+        StopDelay.new({
+            id: row['id'],
+            time: Time.zone.at(row['time']),
+            stop_id: row['stop_id'],
+            delay: row['delay']
+        })
+      end
+      StopDelay.import(new_models)
+      Rails.logger.info("Imported #{new_models.count} new stop_delays rows")
+    else
+      Rails.logger.error('Failed to get stop data')
+    end
   end
 
-  def restore(db_file)
-    max_stop_delays_id = StopDelay.maximum(:id) || -1
+  def import_route_data!
     max_route_delays_id = RouteDelay.maximum(:id) || -1
-    begin
-      db = SQLite3::Database.open(db_file.path)
-      new_stop_delays = db.execute('SELECT * FROM stop_delays WHERE id > ?', max_stop_delays_id).map do |row|
-        StopDelay.new({
-            id: row[0],
-            time: Time.zone.at(row[1]),
-            stop_id: row[2],
-            delay: row[3]
-        })
-      end
-
-      new_route_delays = db.execute('SELECT * FROM route_delays WHERE id > ?', max_route_delays_id).map do |row|
+    Rails.logger.debug("Getting route data rows with id > #{max_route_delays_id}")
+    resp = HTTParty.get("#{@url}/route_data/recent/#{max_route_delays_id}")
+    if resp.success?
+      new_rows = JSON.parse(Zlib::GzipReader.new(StringIO.new(resp.parsed_response)).read)
+      new_models = new_rows.map do |row|
         RouteDelay.new({
-            id: row[0],
-            time: Time.zone.at(row[1]),
-            route_id: row[2],
-            delay: row[3]
+            id: row['id'],
+            time: Time.zone.at(row['time']),
+            route_id: row['route_id'],
+            delay: row['delay']
         })
       end
-
-      StopDelay.import(new_stop_delays)
-      RouteDelay.import(new_route_delays)
-
-      # StopDelay.transaction do
-      #   new_stop_rows.map do |row|
-      #     StopDelay.new(row)
-      #   end
-      # end
-
-      # RouteDelay.transaction do
-      #   new_route_rows.map do |row|
-      #     RouteDelay.create(row)
-      #   end
-      # end
-    rescue Exception => e
-        Rails.logger.error('failed to import data')
-        Rails.logger.error(e.message)
-        Rails.logger.error(e.backtrace)
-    ensure
-      db_file.unlink
+      RouteDelay.import(new_models)
+      Rails.logger.info("Imported #{new_models.count} new route_delays rows")
+    else
+      Rails.logger.error('Failed to get route data')
     end
   end
 end

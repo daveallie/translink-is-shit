@@ -14,8 +14,7 @@ gem 'jquery-rails'
 gem 'jbuilder', '~> 2.0'
 gem 'sdoc', '~> 0.4.0', group: :doc
 
-gem 'httparty'
-gem 'sqlite3', require: false
+gem 'httparty', require: false
 gem 'activerecord-import'
 gem 'haml'
 gem 'bootstrap-sass', '~> 3.3.6'
