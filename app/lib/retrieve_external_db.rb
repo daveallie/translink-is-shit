@@ -14,9 +14,9 @@ class RetrieveExternalDb
 
   private
   def import_stop_data!
-    max_stop_delays_id = StopDelay.maximum(:id) || -1
-    Rails.logger.debug("Getting stop data rows with id > #{max_stop_delays_id}")
-    resp = HTTParty.get("#{@url}/stop_data/recent/#{max_stop_delays_id}")
+    max_stop_delays_time = StopDelay.maximum(:time).try(:to_i) || 0
+    Rails.logger.debug("Getting stop data rows with time > #{max_stop_delays_time}")
+    resp = HTTParty.get("#{@url}/stop_data/recent/#{max_stop_delays_time}")
     if resp.success?
       new_rows = JSON.parse(Zlib::GzipReader.new(StringIO.new(resp.parsed_response)).read)
       new_models = new_rows.map do |row|
@@ -35,9 +35,9 @@ class RetrieveExternalDb
   end
 
   def import_route_data!
-    max_route_delays_id = RouteDelay.maximum(:id) || -1
-    Rails.logger.debug("Getting route data rows with id > #{max_route_delays_id}")
-    resp = HTTParty.get("#{@url}/route_data/recent/#{max_route_delays_id}")
+    max_route_delays_time = RouteDelay.maximum(:time).try(:to_i) || 0
+    Rails.logger.debug("Getting route data rows with time > #{max_route_delays_time}")
+    resp = HTTParty.get("#{@url}/route_data/recent/#{max_route_delays_time}")
     if resp.success?
       new_rows = JSON.parse(Zlib::GzipReader.new(StringIO.new(resp.parsed_response)).read)
       new_models = new_rows.map do |row|
