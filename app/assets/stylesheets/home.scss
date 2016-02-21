@@ -28,3 +28,8 @@
 #title {
   text-align: center;
 }
+
+.nv-y.nv-axis.nvd3-svg .tick.zero line {
+  stroke: #777;
+  stroke-width: 2px;
+}
