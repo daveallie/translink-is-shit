@@ -127,9 +127,11 @@ Translink.Handlers = {
   searchBtnClick: function() {
     var $search = $("#search")
       , routeId = $search.val()
-    $search.val("")
 
-    Translink.Data.checkAndAddRoute(routeId, Translink.Callbacks.updateUrlWithRoute)
+    if (routeId !== "") {
+      $search.val("")
+      Translink.Data.checkAndAddRoute(routeId, Translink.Callbacks.updateUrlWithRoute)
+    }
   },
   clearBtnClick: function() {
     Translink.Chart.resetData()
